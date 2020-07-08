@@ -1,6 +1,6 @@
 <?php
 
-namespace Stevenmaguire\OAuth2\Client\Provider;
+namespace Ubitransport\OAuth2\Client\Provider;
 
 use Exception;
 use Firebase\JWT\JWT;
@@ -9,7 +9,7 @@ use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessToken;
 use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
 use Psr\Http\Message\ResponseInterface;
-use Stevenmaguire\OAuth2\Client\Provider\Exception\EncryptionConfigurationException;
+use Ubitransport\OAuth2\Client\Provider\Exception\EncryptionConfigurationException;
 
 class Keycloak extends AbstractProvider
 {
@@ -17,35 +17,22 @@ class Keycloak extends AbstractProvider
 
     /**
      * Keycloak URL, eg. http://localhost:8080/auth.
-     *
-     * @var string
      */
-    public $authServerUrl = null;
+    public ?string $authServerUrl = null;
 
-    /**
-     * Realm name, eg. demo.
-     *
-     * @var string
-     */
-    public $realm = null;
+    public ?string $realm = null;
 
-    /**
-     * Encryption algorithm.
-     *
-     * You must specify supported algorithms for your application. See
-     * https://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40
-     * for a list of spec-compliant algorithms.
-     *
-     * @var string
-     */
-    public $encryptionAlgorithm = null;
+    public ?string $encryptionAlgorithm = null;
 
-    /**
-     * Encryption key.
-     *
-     * @var string
-     */
-    public $encryptionKey = null;
+    public ?string $encryptionKey = null;
+
+    private ?AccessToken $adminAccessToken = null;
+
+    public const METHOD_GET = 'GET';
+
+    public const METHOD_POST = 'POST';
+
+    public const METHOD_DELETE = 'DELETE';
 
     /**
      * Constructs an OAuth 2.0 service provider.
@@ -70,9 +57,11 @@ class Keycloak extends AbstractProvider
     /**
      * Attempts to decrypt the given response.
      *
-     * @param  string|array|null $response
+     * @param string|array|null $response
      *
      * @return string|array|null
+     * @throws EncryptionConfigurationException
+     * @throws \JsonException
      */
     public function decryptResponse($response)
     {
@@ -87,9 +76,12 @@ class Keycloak extends AbstractProvider
                         $response,
                         $this->encryptionKey,
                         array($this->encryptionAlgorithm)
-                    )
+                    ),
+                    JSON_THROW_ON_ERROR
                 ),
-                true
+                true,
+                512,
+                JSON_THROW_ON_ERROR
             );
         }
 
@@ -99,48 +91,37 @@ class Keycloak extends AbstractProvider
     /**
      * Get authorization url to begin OAuth flow
      *
-     * @return string
      */
-    public function getBaseAuthorizationUrl()
+    public function getBaseAuthorizationUrl(): string
     {
         return $this->getBaseUrlWithRealm().'/protocol/openid-connect/auth';
     }
 
     /**
      * Get access token url to retrieve token
-     *
-     * @param  array $params
-     *
-     * @return string
      */
-    public function getBaseAccessTokenUrl(array $params)
+    public function getBaseAccessTokenUrl(array $params): string
     {
         return $this->getBaseUrlWithRealm().'/protocol/openid-connect/token';
     }
 
     /**
      * Get provider url to fetch user details
-     *
-     * @param  AccessToken $token
-     *
-     * @return string
      */
-    public function getResourceOwnerDetailsUrl(AccessToken $token)
+    public function getResourceOwnerDetailsUrl(AccessToken $token): string
     {
         return $this->getBaseUrlWithRealm().'/protocol/openid-connect/userinfo';
     }
 
     /**
      * Builds the logout URL.
-     *
-     * @param array $options
-     * @return string Authorization URL
      */
-    public function getLogoutUrl(array $options = [])
+    public function getLogoutUrl(array $options = []): string
     {
         $base = $this->getBaseLogoutUrl();
         $params = $this->getAuthorizationParameters($options);
         $query = $this->getAuthorizationQuery($params);
+
         return $this->appendQuery($base, $query);
     }
 
@@ -149,9 +130,9 @@ class Keycloak extends AbstractProvider
      *
      * @return string
      */
-    private function getBaseLogoutUrl()
+    private function getBaseLogoutUrl(): string
     {
-        return $this->getBaseUrlWithRealm() . '/protocol/openid-connect/logout';
+        return $this->getBaseUrlWithRealm().'/protocol/openid-connect/logout';
     }
 
     /**
@@ -159,7 +140,7 @@ class Keycloak extends AbstractProvider
      *
      * @return string
      */
-    protected function getBaseUrlWithRealm()
+    protected function getBaseUrlWithRealm(): string
     {
         return $this->authServerUrl.'/realms/'.$this->realm;
     }
@@ -172,20 +153,29 @@ class Keycloak extends AbstractProvider
      *
      * @return string[]
      */
-    protected function getDefaultScopes()
+    protected function getDefaultScopes(): array
     {
         return ['name', 'email'];
     }
 
     /**
+     * Returns the string that should be used to separate scopes when building
+     * the URL for requesting an access token.
+     */
+    protected function getScopeSeparator(): string
+    {
+        return ' ';
+    }
+
+    /**
      * Check a provider response for errors.
      *
+     * @param ResponseInterface $response
+     * @param string|array      $data Parsed response data
+     *
      * @throws IdentityProviderException
-     * @param  ResponseInterface $response
-     * @param  string $data Parsed response data
-     * @return void
      */
-    protected function checkResponse(ResponseInterface $response, $data)
+    protected function checkResponse(ResponseInterface $response, $data): void
     {
         if (!empty($data['error'])) {
             $error = $data['error'].': '.$data['error_description'];
@@ -195,12 +185,8 @@ class Keycloak extends AbstractProvider
 
     /**
      * Generate a user object from a successful user details request.
-     *
-     * @param array $response
-     * @param AccessToken $token
-     * @return KeycloakResourceOwner
      */
-    protected function createResourceOwner(array $response, AccessToken $token)
+    protected function createResourceOwner(array $response, AccessToken $token): KeycloakResourceOwner
     {
         return new KeycloakResourceOwner($response);
     }
@@ -208,13 +194,10 @@ class Keycloak extends AbstractProvider
     /**
      * Requests and returns the resource owner of given access token.
      *
-     * @param  AccessToken $token
-     * @return KeycloakResourceOwner
      */
-    public function getResourceOwner(AccessToken $token)
+    public function getResourceOwner(AccessToken $token): KeycloakResourceOwner
     {
         $response = $this->fetchResourceOwnerDetails($token);
-
         $response = $this->decryptResponse($response);
 
         return $this->createResourceOwner($response, $token);
@@ -223,11 +206,11 @@ class Keycloak extends AbstractProvider
     /**
      * Updates expected encryption algorithm of Keycloak instance.
      *
-     * @param string  $encryptionAlgorithm
+     * @param string $encryptionAlgorithm
      *
      * @return Keycloak
      */
-    public function setEncryptionAlgorithm($encryptionAlgorithm)
+    public function setEncryptionAlgorithm($encryptionAlgorithm): Keycloak
     {
         $this->encryptionAlgorithm = $encryptionAlgorithm;
 
@@ -237,11 +220,11 @@ class Keycloak extends AbstractProvider
     /**
      * Updates expected encryption key of Keycloak instance.
      *
-     * @param string  $encryptionKey
+     * @param string $encryptionKey
      *
      * @return Keycloak
      */
-    public function setEncryptionKey($encryptionKey)
+    public function setEncryptionKey($encryptionKey): Keycloak
     {
         $this->encryptionKey = $encryptionKey;
 
@@ -252,11 +235,11 @@ class Keycloak extends AbstractProvider
      * Updates expected encryption key of Keycloak instance to content of given
      * file path.
      *
-     * @param string  $encryptionKeyPath
+     * @param string $encryptionKeyPath
      *
      * @return Keycloak
      */
-    public function setEncryptionKeyPath($encryptionKeyPath)
+    public function setEncryptionKeyPath($encryptionKeyPath): Keycloak
     {
         try {
             $this->encryptionKey = file_get_contents($encryptionKeyPath);
@@ -272,8 +255,92 @@ class Keycloak extends AbstractProvider
      *
      * @return bool
      */
-    public function usesEncryption()
+    public function usesEncryption(): bool
     {
-        return (bool) $this->encryptionAlgorithm && $this->encryptionKey;
+        return (bool)$this->encryptionAlgorithm && $this->encryptionKey;
+    }
+
+    public function getCertificatePublicUrl(string $realm): string
+    {
+        return $this->authServerUrl.'/realms/'.$realm.'/protocol/openid-connect/certs';
+    }
+
+    public function getPathToIntrospectionEndPoint(string $realm): string
+    {
+        return $this->authServerUrl.'/realms/'.$realm.'/protocol/openid-connect/token/introspect';
+    }
+
+    public function getPathToDiscovery(string $realm): string
+    {
+        return $this->authServerUrl.'/realms/'.$realm.'/.well-known/openid-configuration';
+    }
+
+    public function getKeycloakOidcJson(string $realm, string $clientId): string
+    {
+        return $this->authServerUrl.'/realms/'.$realm.'/clients/'.$clientId.'/installation/providers/keycloak-oidc-keycloak-json';
+    }
+
+    public function getClients(string $realm)
+    {
+        return $this->authServerUrl.'/realms/'.$realm.'/clients';
+    }
+
+    public function getUsableAdminAccessToken(): AccessToken
+    {
+        return $this->adminAccessToken = $this->getUsableAccessToken($this->adminAccessToken);
+    }
+
+    public function getUsableAccessToken(AccessToken $token = null): AccessToken
+    {
+        if (null === $token) {
+            return $this->getAccessTokenUsingClientCredentials();
+        }
+
+        $this->refreshTokenIfExpired($token);
+
+        return $token;
+    }
+
+    public function getAccessTokenUsingClientCredentials(): AccessToken
+    {
+        try {
+            return $this->getAccessToken('client_credentials');
+        } catch (IdentityProviderException $e) {
+        }
+    }
+
+    public function refreshTokenIfExpired(AccessToken &$token): void
+    {
+        if ($token->hasExpired()) {
+            $token = $this->getAccessToken(
+                'refresh_token',
+                [
+                    'refresh_token' => $token->getRefreshToken(),
+                ]
+            );
+        }
+    }
+
+    public function sendAdminRequestToKeycloak(
+        string $method,
+        string $uri,
+        array $options = []
+    ): \Psr\Http\Message\ResponseInterface {
+        $request = $this->getAuthenticatedRequest(
+            $method,
+            $this->getAuthServerUrl().$uri,
+            $this->getUsableAdminAccessToken(),
+            $options
+        );
+
+        return $this->getResponse($request);
+    }
+
+    /**
+     * @return string
+     */
+    public function getAuthServerUrl(): ?string
+    {
+        return $this->authServerUrl;
     }
 }

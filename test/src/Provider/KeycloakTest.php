@@ -5,7 +5,7 @@ namespace
     $mockFileGetContents = null;
 }
 
-namespace Stevenmaguire\OAuth2\Client\Provider
+namespace Ubitransport\OAuth2\Client\Provider
 {
     function file_get_contents()
     {
@@ -21,7 +21,7 @@ namespace Stevenmaguire\OAuth2\Client\Provider
     }
 }
 
-namespace Stevenmaguire\OAuth2\Client\Test\Provider
+namespace Ubitransport\OAuth2\Client\Test\Provider
 {
     use League\OAuth2\Client\Tool\QueryBuilderTrait;
     use Mockery as m;
@@ -30,11 +30,11 @@ namespace Stevenmaguire\OAuth2\Client\Test\Provider
     {
         use QueryBuilderTrait;
 
-        protected $provider;
+        protected \Ubitransport\OAuth2\Client\Provider\Keycloak $provider;
 
-        protected function setUp()
+        protected function setUp(): void
         {
-            $this->provider = new \Stevenmaguire\OAuth2\Client\Provider\Keycloak([
+            $this->provider = new \Ubitransport\OAuth2\Client\Provider\Keycloak([
                 'authServerUrl' => 'http://mock.url/auth',
                 'realm' => 'mock_realm',
                 'clientId' => 'mock_client_id',
@@ -49,7 +49,7 @@ namespace Stevenmaguire\OAuth2\Client\Test\Provider
             parent::tearDown();
         }
 
-        public function testAuthorizationUrl()
+        public function testAuthorizationUrl(): void
         {
             $url = $this->provider->getAuthorizationUrl();
             $uri = parse_url($url);
@@ -64,51 +64,51 @@ namespace Stevenmaguire\OAuth2\Client\Test\Provider
             $this->assertNotNull($this->provider->getState());
         }
 
-        public function testEncryptionAlgorithm()
+        public function testEncryptionAlgorithm(): void
         {
-            $algorithm = uniqid();
-            $provider = new \Stevenmaguire\OAuth2\Client\Provider\Keycloak([
+            $algorithm = uniqid('', true);
+            $provider = new \Ubitransport\OAuth2\Client\Provider\Keycloak([
                 'encryptionAlgorithm' => $algorithm,
             ]);
 
             $this->assertEquals($algorithm, $provider->encryptionAlgorithm);
 
-            $algorithm = uniqid();
+            $algorithm = uniqid('', true);
             $provider->setEncryptionAlgorithm($algorithm);
 
             $this->assertEquals($algorithm, $provider->encryptionAlgorithm);
         }
 
-        public function testEncryptionKey()
+        public function testEncryptionKey(): void
         {
-            $key = uniqid();
-            $provider = new \Stevenmaguire\OAuth2\Client\Provider\Keycloak([
+            $key = uniqid('', true);
+            $provider = new \Ubitransport\OAuth2\Client\Provider\Keycloak([
                 'encryptionKey' => $key,
             ]);
 
             $this->assertEquals($key, $provider->encryptionKey);
 
-            $key = uniqid();
+            $key = uniqid('', true);
             $provider->setEncryptionKey($key);
 
             $this->assertEquals($key, $provider->encryptionKey);
         }
 
-        public function testEncryptionKeyPath()
+        public function testEncryptionKeyPath(): void
         {
             global $mockFileGetContents;
-            $path = uniqid();
-            $key = uniqid();
+            $path = uniqid('', true);
+            $key = uniqid('', true);
             $mockFileGetContents = $key;
 
-            $provider = new \Stevenmaguire\OAuth2\Client\Provider\Keycloak([
+            $provider = new \Ubitransport\OAuth2\Client\Provider\Keycloak([
                 'encryptionKeyPath' => $path,
             ]);
 
             $this->assertEquals($key, $provider->encryptionKey);
 
-            $path = uniqid();
-            $key = uniqid();
+            $path = uniqid('', true);
+            $key = uniqid('', true);
             $mockFileGetContents = $key;
 
             $provider->setEncryptionKeyPath($path);
@@ -116,31 +116,31 @@ namespace Stevenmaguire\OAuth2\Client\Test\Provider
             $this->assertEquals($key, $provider->encryptionKey);
         }
 
-        public function testEncryptionKeyPathFails()
+        public function testEncryptionKeyPathFails(): void
         {
             global $mockFileGetContents;
-            $path = uniqid();
-            $key = uniqid();
+            $path = uniqid('', true);
+            $key = uniqid('', true);
             $mockFileGetContents = new \Exception();
 
-            $provider = new \Stevenmaguire\OAuth2\Client\Provider\Keycloak([
+            $provider = new \Ubitransport\OAuth2\Client\Provider\Keycloak([
                 'encryptionKeyPath' => $path,
             ]);
 
             $provider->setEncryptionKeyPath($path);
         }
 
-        public function testScopes()
+        public function testScopes(): void
         {
             $scopeSeparator = ',';
-            $options = ['scope' => [uniqid(), uniqid()]];
+            $options = ['scope' => [uniqid('', true), uniqid('', true)]];
             $query = ['scope' => implode($scopeSeparator, $options['scope'])];
             $url = $this->provider->getAuthorizationUrl($options);
             $encodedScope = $this->buildQueryString($query);
             $this->assertContains($encodedScope, $url);
         }
 
-        public function testGetAuthorizationUrl()
+        public function testGetAuthorizationUrl(): void
         {
             $url = $this->provider->getAuthorizationUrl();
             $uri = parse_url($url);
@@ -148,7 +148,7 @@ namespace Stevenmaguire\OAuth2\Client\Test\Provider
             $this->assertEquals('/auth/realms/mock_realm/protocol/openid-connect/auth', $uri['path']);
         }
 
-        public function testGetLogoutUrl()
+        public function testGetLogoutUrl(): void
         {
             $url = $this->provider->getLogoutUrl();
             $uri = parse_url($url);
@@ -156,7 +156,7 @@ namespace Stevenmaguire\OAuth2\Client\Test\Provider
             $this->assertEquals('/auth/realms/mock_realm/protocol/openid-connect/logout', $uri['path']);
         }
 
-        public function testGetBaseAccessTokenUrl()
+        public function testGetBaseAccessTokenUrl(): void
         {
             $params = [];
 
@@ -166,7 +166,7 @@ namespace Stevenmaguire\OAuth2\Client\Test\Provider
             $this->assertEquals('/auth/realms/mock_realm/protocol/openid-connect/token', $uri['path']);
         }
 
-        public function testGetAccessToken()
+        public function testGetAccessToken(): void
         {
             $response = m::mock('Psr\Http\Message\ResponseInterface');
             $response->shouldReceive('getBody')->andReturn('{"access_token":"mock_access_token", "scope":"email", "token_type":"bearer"}');
@@ -184,12 +184,12 @@ namespace Stevenmaguire\OAuth2\Client\Test\Provider
             $this->assertNull($token->getResourceOwnerId());
         }
 
-        public function testUserData()
+        public function testUserData(): void
         {
-            $userId = rand(1000,9999);
-            $name = uniqid();
-            $nickname = uniqid();
-            $email = uniqid();
+            $userId = random_int(1000,9999);
+            $name = uniqid('', true);
+            $nickname = uniqid('', true);
+            $email = uniqid('', true);
 
             $postResponse = m::mock('Psr\Http\Message\ResponseInterface');
             $postResponse->shouldReceive('getBody')->andReturn('access_token=mock_access_token&expires=3600&refresh_token=mock_refresh_token&otherKey={1234}');
@@ -216,15 +216,15 @@ namespace Stevenmaguire\OAuth2\Client\Test\Provider
             $this->assertEquals($email, $user->toArray()['email']);
         }
 
-        public function testUserDataWithEncryption()
+        public function testUserDataWithEncryption(): void
         {
-            $userId = rand(1000,9999);
-            $name = uniqid();
-            $nickname = uniqid();
-            $email = uniqid();
-            $jwt = uniqid();
-            $algorithm = uniqid();
-            $key = uniqid();
+            $userId = random_int(1000,9999);
+            $name = uniqid('', true);
+            $nickname = uniqid('', true);
+            $email =uniqid('', true);
+            $jwt = uniqid('', true);
+            $algorithm = uniqid('', true);
+            $key = uniqid('', true);
 
             $postResponse = m::mock('Psr\Http\Message\ResponseInterface');
             $postResponse->shouldReceive('getBody')->andReturn('access_token=mock_access_token&expires=3600&refresh_token=mock_refresh_token&otherKey={1234}');
@@ -263,9 +263,9 @@ namespace Stevenmaguire\OAuth2\Client\Test\Provider
         }
 
         /**
-         * @expectedException Stevenmaguire\OAuth2\Client\Provider\Exception\EncryptionConfigurationException
+         * @expectedException Ubitransport\OAuth2\Client\Provider\Exception\EncryptionConfigurationException
          */
-        public function testUserDataFailsWhenEncryptionEncounteredAndNotConfigured()
+        public function testUserDataFailsWhenEncryptionEncounteredAndNotConfigured(): void
         {
             $postResponse = m::mock('Psr\Http\Message\ResponseInterface');
             $postResponse->shouldReceive('getBody')->andReturn('access_token=mock_access_token&expires=3600&refresh_token=mock_refresh_token&otherKey={1234}');
@@ -273,7 +273,7 @@ namespace Stevenmaguire\OAuth2\Client\Test\Provider
             $postResponse->shouldReceive('getStatusCode')->andReturn(200);
 
             $userResponse = m::mock('Psr\Http\Message\ResponseInterface');
-            $userResponse->shouldReceive('getBody')->andReturn(uniqid());
+            $userResponse->shouldReceive('getBody')->andReturn(uniqid('', true));
             $userResponse->shouldReceive('getHeader')->andReturn(['content-type' => 'application/jwt']);
             $userResponse->shouldReceive('getStatusCode')->andReturn(200);
 
@@ -290,7 +290,7 @@ namespace Stevenmaguire\OAuth2\Client\Test\Provider
         /**
          * @expectedException League\OAuth2\Client\Provider\Exception\IdentityProviderException
          */
-        public function testErrorResponse()
+        public function testErrorResponse(): void
         {
             $response = m::mock('Psr\Http\Message\ResponseInterface');
             $response->shouldReceive('getBody')->andReturn('{"error": "invalid_grant", "error_description": "Code not found"}');
