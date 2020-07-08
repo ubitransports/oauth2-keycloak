@@ -1,5 +1,5 @@
 {
-    "name": "stevenmaguire/oauth2-keycloak",
+    "name": "ubitransport/oauth2-keycloak",
     "description": "Keycloak OAuth 2.0 Client Provider for The PHP League OAuth2-Client",
     "license": "MIT",
     "authors": [
@@ -18,8 +18,9 @@
         "keycloak"
     ],
     "require": {
-        "league/oauth2-client": "^2.0 <2.3.0",
-        "firebase/php-jwt": "^4.0"
+        "ubitransport/oauth2-client": "^2.0",
+        "firebase/php-jwt": "^4.0",
+        "ext-json": "*"
     },
     "require-dev": {
         "phpunit/phpunit": "~4.0",
@@ -28,17 +29,18 @@
     },
     "autoload": {
         "psr-4": {
-            "Stevenmaguire\\OAuth2\\Client\\": "src/"
+            "Ubitransport\\OAuth2\\Client\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Stevenmaguire\\OAuth2\\Client\\Test\\": "test/src/"
+            "Ubitransport\\OAuth2\\Client\\Test\\": "test/src/"
         }
     },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "1.0.x-dev"
+    "repositories": [
+        {
+            "type": "git",
+            "url": "https://github.com/ubitransports/oauth2-client"
         }
-    }
+    ]
 }
