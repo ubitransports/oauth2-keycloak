@@ -37,11 +37,6 @@
             "Ubitransport\\OAuth2\\Client\\Test\\": "test/src/"
         }
     },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "1.0.x-dev"
-        }
-    },
     "repositories": [
         {
             "type": "git",
