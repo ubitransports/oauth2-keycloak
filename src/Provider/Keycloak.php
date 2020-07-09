@@ -19,20 +19,12 @@ class Keycloak extends AbstractProvider
      * Keycloak URL, eg. http://localhost:8080/auth.
      */
     public ?string $authServerUrl = null;
-
     public ?string $realm = null;
-
     public ?string $encryptionAlgorithm = null;
-
     public ?string $encryptionKey = null;
-
     private ?AccessToken $adminAccessToken = null;
-
     public const METHOD_GET = 'GET';
-
     public const METHOD_POST = 'POST';
-
-    public const METHOD_DELETE = 'DELETE';
 
     /**
      * Constructs an OAuth 2.0 service provider.
@@ -68,7 +60,6 @@ class Keycloak extends AbstractProvider
         if (!is_string($response)) {
             return $response;
         }
-
         if ($this->usesEncryption()) {
             return json_decode(
                 json_encode(
@@ -84,7 +75,6 @@ class Keycloak extends AbstractProvider
                 JSON_THROW_ON_ERROR
             );
         }
-
         throw EncryptionConfigurationException::undeterminedEncryption();
     }
 
@@ -262,27 +252,27 @@ class Keycloak extends AbstractProvider
 
     public function getCertificatePublicUrl(string $realm): string
     {
-        return $this->authServerUrl.'/realms/'.$realm.'/protocol/openid-connect/certs';
+        return '/realms/'.$realm.'/protocol/openid-connect/certs';
     }
 
     public function getPathToIntrospectionEndPoint(string $realm): string
     {
-        return $this->authServerUrl.'/realms/'.$realm.'/protocol/openid-connect/token/introspect';
+        return '/realms/'.$realm.'/protocol/openid-connect/token/introspect';
     }
 
     public function getPathToDiscovery(string $realm): string
     {
-        return $this->authServerUrl.'/realms/'.$realm.'/.well-known/openid-configuration';
+        return '/realms/'.$realm.'/.well-known/openid-configuration';
     }
 
     public function getKeycloakOidcJson(string $realm, string $clientId): string
     {
-        return $this->authServerUrl.'/realms/'.$realm.'/clients/'.$clientId.'/installation/providers/keycloak-oidc-keycloak-json';
+        return '/realms/'.$realm.'/clients/'.$clientId.'/installation/providers/keycloak-oidc-keycloak-json';
     }
 
     public function getClients(string $realm)
     {
-        return $this->authServerUrl.'/realms/'.$realm.'/clients';
+        return '/realms/'.$realm.'/clients';
     }
 
     public function getUsableAdminAccessToken(): AccessToken
@@ -295,7 +285,6 @@ class Keycloak extends AbstractProvider
         if (null === $token) {
             return $this->getAccessTokenUsingClientCredentials();
         }
-
         $this->refreshTokenIfExpired($token);
 
         return $token;
