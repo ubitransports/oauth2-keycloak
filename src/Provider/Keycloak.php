@@ -267,12 +267,12 @@ class Keycloak extends AbstractProvider
 
     public function getKeycloakOidcJson(string $realm, string $clientId): string
     {
-        return '/realms/'.$realm.'/clients/'.$clientId.'/installation/providers/keycloak-oidc-keycloak-json';
+        return '/admin/realms/'.$realm.'/clients/'.$clientId.'/installation/providers/keycloak-oidc-keycloak-json';
     }
 
     public function getClients(string $realm)
     {
-        return '/realms/'.$realm.'/clients';
+        return '/admin/realms/'.$realm.'/clients';
     }
 
     public function getUsableAdminAccessToken(): AccessToken
